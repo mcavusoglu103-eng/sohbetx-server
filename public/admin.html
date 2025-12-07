@@ -2,4 +2,126 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8" />
-  <title>Sohbe
+  <title>SohbetX Admin Paneli</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body {
+      margin: 0;
+      background: #020617;
+      font-family: Arial, sans-serif;
+      color: #e5e7eb;
+    }
+    .app {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+    h2 { margin-top: 0; }
+    input, select {
+      width: 100%;
+      padding: 8px;
+      margin: 4px 0;
+      border-radius: 6px;
+      border: 1px solid #334155;
+      background: #0f172a;
+      color: #e5e7eb;
+    }
+    button {
+      width: 100%;
+      padding: 8px;
+      margin-top: 6px;
+      border-radius: 6px;
+      border: none;
+      background: #4f46e5;
+      color: white;
+      font-weight: 600;
+    }
+    .card {
+      border: 1px solid #1f2937;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 16px;
+      background: #020617;
+    }
+    .note {
+      font-size: 11px;
+      color: #9ca3af;
+      margin-top: 4px;
+    }
+    #msg {
+      font-size: 12px;
+      margin-top: 10px;
+      min-height: 16px;
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <h2>SohbetX Admin Paneli</h2>
+
+  <div class="card">
+    <h3>Giriş</h3>
+    <input id="adminKey" type="password" placeholder="Admin anahtarı" />
+    <p class="note">
+      Varsayılan admin anahtarı: <b>SUPERADMIN123</b><br>
+      (server.js içinde ADMIN_KEY olarak tanımlı)
+    </p>
+  </div>
+
+  <div class="card">
+    <h3>Jeton Ekle</h3>
+    <input id="coinUser" placeholder="Kullanıcı adı" />
+    <input id="coinAmount" type="number" placeholder="Eklenecek jeton (örn: 50)" />
+    <button onclick="addCoins()">Jeton Ekle</button>
+  </div>
+
+  <div class="card">
+    <h3>VIP Durumu</h3>
+    <input id="vipUser" placeholder="Kullanıcı adı" />
+    <select id="vipValue">
+      <option value="true">VIP Yap</option>
+      <option value="false">VIP Kaldır</option>
+    </select>
+    <button onclick="setVip()">VIP Güncelle</button>
+  </div>
+
+  <div id="msg"></div>
+</div>
+
+<script>
+  const baseUrl = ""; // aynı origin
+
+  async function addCoins() {
+    const adminKey = document.getElementById("adminKey").value.trim();
+    const username = document.getElementById("coinUser").value.trim();
+    const amount = document.getElementById("coinAmount").value.trim();
+
+    const res = await fetch(baseUrl + "/admin/addCoins", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ adminKey, username, amount })
+    });
+
+    const data = await res.json();
+    document.getElementById("msg").innerText = data.msg || "İşlem tamamlandı.";
+  }
+
+  async function setVip() {
+    const adminKey = document.getElementById("adminKey").value.trim();
+    const username = document.getElementById("vipUser").value.trim();
+    const vipRaw   = document.getElementById("vipValue").value;
+    const vip = vipRaw === "true";
+
+    const res = await fetch(baseUrl + "/admin/setVip", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ adminKey, username, vip })
+    });
+
+    const data = await res.json();
+    document.getElementById("msg").innerText = data.msg || "İşlem tamamlandı.";
+  }
+</script>
+
+</body>
+</html>
