@@ -8,73 +8,109 @@
     body {
       margin: 0;
       background: #0f172a;
-      font-family: Arial;
-      color: white;
+      font-family: Arial, sans-serif;
+      color: #e5e7eb;
     }
     .app {
       max-width: 480px;
       margin: 0 auto;
-      padding: 20px;
+      padding: 16px;
     }
+    h2, h3 { margin: 0 0 8px 0; }
     input {
       width: 100%;
-      padding: 10px;
-      margin: 6px 0;
+      padding: 8px;
+      margin: 4px 0;
       border-radius: 6px;
       border: 1px solid #334155;
       background: #1e293b;
-      color: white;
+      color: #e5e7eb;
     }
     button {
       width: 100%;
-      padding: 10px;
-      background: #4f46e5;
-      border: none;
+      padding: 8px;
+      margin-top: 4px;
       border-radius: 6px;
-      font-weight: bold;
-      margin-top: 6px;
+      border: none;
+      background: #4f46e5;
       color: white;
+      font-weight: 600;
     }
-    #chatSection { display: none; }
+    button.small {
+      width: auto;
+      padding: 6px 10px;
+      font-size: 12px;
+      margin-left: 4px;
+    }
     #authSection { display: block; }
+    #chatSection { display: none; }
     #messages {
-      height: 60vh;
+      height: 55vh;
       border: 1px solid #334155;
-      padding: 10px;
+      padding: 8px;
       overflow-y: auto;
-      margin-top: 10px;
-      background: #1e293b;
+      margin-top: 8px;
+      background: #020617;
+      font-size: 14px;
     }
-    .me { text-align: right; color: #4ade80; }
+    .msg {
+      margin-bottom: 4px;
+    }
+    .me { text-align: right; color: #a5b4fc; }
     .other { text-align: left; color: #93c5fd; }
+    .vip-tag {
+      display: inline-block;
+      background: #fbbf24;
+      color: #111827;
+      padding: 0 4px;
+      margin-right: 4px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 700;
+    }
+    .highlight {
+      background: rgba(250, 204, 21, 0.15);
+      border-radius: 4px;
+      padding: 2px 4px;
+    }
+    .info-bar {
+      font-size: 12px;
+      margin: 6px 0;
+      color: #bfdbfe;
+    }
   </style>
 </head>
 <body>
 
 <div class="app">
 
-  <!-- Giriş / Kayıt Alanı -->
+  <!-- Giriş / Kayıt -->
   <div id="authSection">
     <h2>SohbetX – Giriş</h2>
 
     <input id="loginUsername" placeholder="Kullanıcı adı" />
-    <input id="loginPassword" placeholder="Şifre" type="password" />
+    <input id="loginPassword" type="password" placeholder="Şifre" />
     <button onclick="login()">Giriş Yap</button>
 
-    <hr style="margin:20px 0; border-color:#334155;">
+    <p id="authMsg" style="font-size:12px; min-height:16px;"></p>
+
+    <hr style="margin:16px 0; border-color:#1f2937;">
 
     <h3>Yeni Kayıt</h3>
     <input id="regUsername" placeholder="Kullanıcı adı" />
-    <input id="regPassword" placeholder="Şifre" type="password" />
+    <input id="regPassword" type="password" placeholder="Şifre" />
     <button onclick="registerUser()">Kayıt Ol</button>
-
-    <p id="authMsg"></p>
   </div>
 
-
-  <!-- Sohbet Alanı -->
+  <!-- Sohbet -->
   <div id="chatSection">
-    <h2>SohbetX – <span id="userLabel"></span></h2>
+    <h2>SohbetX</h2>
+    <div class="info-bar">
+      Kullanıcı: <span id="userLabel"></span>
+      <br>
+      Durum: <span id="vipLabel">Normal</span> |
+      Jeton: <span id="coinLabel">0</span>
+    </div>
 
     <input id="roomId" placeholder="Oda ID (örn: genel)" />
     <button onclick="joinRoom()">Odaya Gir</button>
@@ -83,10 +119,14 @@
 
     <input id="messageInput" placeholder="Mesaj yaz..." />
     <button onclick="sendMessage()">Gönder</button>
+    <button class="small" onclick="sendHighlighted()">5 Jetonla Öne Çıkar</button>
+
+    <p style="font-size:11px; margin-top:6px; color:#9ca3af;">
+      Öne çıkarılmış mesajlar: 5 jeton harcar ve sarı vurgulu görünür.
+    </p>
   </div>
 
 </div>
-
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
@@ -94,8 +134,15 @@
 
   let currentUser = null;
   let currentRoom = null;
+  let currentCoins = 0;
+  let currentVip = false;
 
-  // Kayıt
+  const authMsg = document.getElementById("authMsg");
+  const userLabel = document.getElementById("userLabel");
+  const vipLabel = document.getElementById("vipLabel");
+  const coinLabel = document.getElementById("coinLabel");
+  const messagesDiv = document.getElementById("messages");
+
   async function registerUser() {
     const username = document.getElementById("regUsername").value.trim();
     const password = document.getElementById("regPassword").value.trim();
@@ -107,10 +154,9 @@
     });
 
     const data = await res.json();
-    document.getElementById("authMsg").innerText = data.msg;
+    authMsg.innerText = data.msg || "";
   }
 
-  // Giriş
   async function login() {
     const username = document.getElementById("loginUsername").value.trim();
     const password = document.getElementById("loginPassword").value.trim();
@@ -124,43 +170,105 @@
     const data = await res.json();
 
     if (!data.ok) {
-      document.getElementById("authMsg").innerText = data.msg;
+      authMsg.innerText = data.msg || "Giriş başarısız.";
       return;
     }
 
     currentUser = username;
+    currentVip = data.user.vip;
+    currentCoins = data.user.coins || 0;
+
+    userLabel.innerText = currentUser;
+    vipLabel.innerText = currentVip ? "VIP" : "Normal";
+    coinLabel.innerText = currentCoins;
 
     document.getElementById("authSection").style.display = "none";
     document.getElementById("chatSection").style.display = "block";
-    document.getElementById("userLabel").innerText = currentUser;
   }
 
-  // Odaya giriş
   function joinRoom() {
     currentRoom = document.getElementById("roomId").value.trim() || "genel";
     socket.emit("joinRoom", currentRoom);
   }
 
-  // Mesaj gönder
-  function sendMessage() {
+  function sendMessageBase(highlight) {
     const text = document.getElementById("messageInput").value.trim();
     if (!text) return;
+    if (!currentRoom) {
+      alert("Önce odaya gir.");
+      return;
+    }
 
     socket.emit("sendMessage", {
       roomId: currentRoom,
       from: currentUser,
-      text
+      text,
+      highlight: !!highlight
     });
 
     document.getElementById("messageInput").value = "";
   }
 
-  // Mesaj alma
+  function sendMessage() {
+    sendMessageBase(false);
+  }
+
+  async function sendHighlighted() {
+    if (!currentUser) return;
+    if (!currentRoom) {
+      alert("Önce odaya gir.");
+      return;
+    }
+
+    // 5 jeton harca
+    const res = await fetch("/spendCoins", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: currentUser, amount: 5 })
+    });
+
+    const data = await res.json();
+
+    if (!data.ok) {
+      alert(data.msg || "Jeton harcanamadı.");
+      return;
+    }
+
+    currentCoins = data.coins;
+    coinLabel.innerText = currentCoins;
+
+    sendMessageBase(true);
+  }
+
   socket.on("receiveMessage", (data) => {
-    const msgDiv = document.createElement("div");
-    msgDiv.className = (data.from === currentUser) ? "me" : "other";
-    msgDiv.innerText = data.from + ": " + data.text;
-    document.getElementById("messages").appendChild(msgDiv);
+    const div = document.createElement("div");
+    div.className = "msg " + (data.from === currentUser ? "me" : "other");
+
+    const namePart = document.createElement("span");
+
+    if (data.vip) {
+      const vipSpan = document.createElement("span");
+      vipSpan.className = "vip-tag";
+      vipSpan.innerText = "VIP";
+      div.appendChild(vipSpan);
+    }
+
+    namePart.innerText = data.from + ": ";
+    div.appendChild(namePart);
+
+    const textSpan = document.createElement("span");
+    if (data.highlight) {
+      const wrap = document.createElement("span");
+      wrap.className = "highlight";
+      wrap.innerText = data.text;
+      textSpan.appendChild(wrap);
+    } else {
+      textSpan.innerText = data.text;
+    }
+
+    div.appendChild(textSpan);
+    messagesDiv.appendChild(div);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
   });
 </script>
 
