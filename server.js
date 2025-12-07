@@ -1,60 +1,76 @@
-const users = {}; // Geçici bellek (MongoDB ekleyince burayı değiştiririz)
+const express = require("express");
+const http = require("http");
+const cors = require("cors");
+const { Server } = require("socket.io");
+const path = require("path");
 const crypto = require("crypto");
 
-// Basit şifreleme
+const app = express();
+
+app.use(cors());
+app.use(express.json()); // JSON body okumak için
+app.use(express.static(path.join(__dirname, "public")));
+
+// Geçici kullanıcı veritabanı (şimdilik RAM'de)
+const users = {}; 
+// Yapı:
+// users["Muhammed"] = { username: "Muhammed", password: "hash", vip: false, coins: 0 };
+
 function hashPassword(pass) {
   return crypto.createHash("sha256").update(pass).digest("hex");
 }
 
-// Kayıt
-app.post("/register", express.json(), (req, res) => {
+// Kayıt endpoint'i
+app.post("/register", (req, res) => {
   const { username, password } = req.body;
 
-  if (!username || !password)
-    return res.json({ ok: false, msg: "Eksik bilgi" });
+  if (!username || !password) {
+    return res.json({ ok: false, msg: "Kullanıcı adı ve şifre gerekli." });
+  }
 
-  if (users[username])
-    return res.json({ ok: false, msg: "Bu kullanıcı zaten var." });
+  if (users[username]) {
+    return res.json({ ok: false, msg: "Bu kullanıcı zaten kayıtlı." });
+  }
 
   users[username] = {
     username,
     password: hashPassword(password),
     vip: false,
     coins: 0,
+    createdAt: Date.now(),
   };
 
-  res.json({ ok: true, msg: "Kayıt başarılı" });
+  return res.json({ ok: true, msg: "Kayıt başarılı." });
 });
 
-// Giriş
-app.post("/login", express.json(), (req, res) => {
+// Giriş endpoint'i
+app.post("/login", (req, res) => {
   const { username, password } = req.body;
 
-  if (!users[username])
-    return res.json({ ok: false, msg: "Kullanıcı yok" });
+  if (!username || !password) {
+    return res.json({ ok: false, msg: "Kullanıcı adı ve şifre gerekli." });
+  }
 
-  if (users[username].password !== hashPassword(password))
-    return res.json({ ok: false, msg: "Şifre yanlış" });
+  const user = users[username];
+  if (!user) {
+    return res.json({ ok: false, msg: "Kullanıcı bulunamadı." });
+  }
 
-  res.json({
+  if (user.password !== hashPassword(password)) {
+    return res.json({ ok: false, msg: "Şifre hatalı." });
+  }
+
+  // Şimdilik sadece kullanıcı bilgisi dönüyoruz
+  return res.json({
     ok: true,
-    user: users[username],
+    msg: "Giriş başarılı.",
+    user: {
+      username: user.username,
+      vip: user.vip,
+      coins: user.coins,
+    },
   });
 });
-
-
-const express = require("express");
-const http = require("http");
-const cors = require("cors");
-const { Server } = require("socket.io");
-const path = require("path");
-
-const app = express();
-
-app.use(cors());
-
-// public klasörünü statik servis et
-app.use(express.static(path.join(__dirname, "public")));
 
 // Sağlık kontrolü
 app.get("/api", (req, res) => {
@@ -66,8 +82,8 @@ const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
     origin: "*",
-    methods: ["GET", "POST"]
-  }
+    methods: ["GET", "POST"],
+  },
 });
 
 io.on("connection", (socket) => {
@@ -82,7 +98,7 @@ io.on("connection", (socket) => {
     const payload = {
       from: data.from,
       text: data.text,
-      time: Date.now()
+      time: Date.now(),
     };
     io.to(data.roomId).emit("receiveMessage", payload);
   });
@@ -92,7 +108,7 @@ io.on("connection", (socket) => {
   });
 });
 
-const PORT = process.env.PORT || 10000;
+const PORT = process.env.PORT || process.env.PORT0 || 10000;
 server.listen(PORT, () => {
   console.log("SohbetX server port:", PORT);
 });
