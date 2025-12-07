@@ -45,7 +45,7 @@
     #authSection { display: block; }
     #chatSection { display: none; }
     #messages {
-      height: 55vh;
+      height: 40vh;
       border: 1px solid #334155;
       padding: 8px;
       overflow-y: auto;
@@ -53,9 +53,7 @@
       background: #020617;
       font-size: 14px;
     }
-    .msg {
-      margin-bottom: 4px;
-    }
+    .msg { margin-bottom: 4px; }
     .me { text-align: right; color: #a5b4fc; }
     .other { text-align: left; color: #93c5fd; }
     .vip-tag {
@@ -77,6 +75,25 @@
       font-size: 12px;
       margin: 6px 0;
       color: #bfdbfe;
+    }
+    .packages {
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #1f2937;
+      background: #020617;
+      font-size: 12px;
+    }
+    .packages h3 {
+      margin: 0 0 6px 0;
+      font-size: 14px;
+    }
+    .packages ul {
+      margin: 0 0 6px 16px;
+      padding: 0;
+    }
+    .packages li {
+      margin-bottom: 3px;
     }
   </style>
 </head>
@@ -106,8 +123,7 @@
   <div id="chatSection">
     <h2>SohbetX</h2>
     <div class="info-bar">
-      Kullanıcı: <span id="userLabel"></span>
-      <br>
+      Kullanıcı: <span id="userLabel"></span><br>
       Durum: <span id="vipLabel">Normal</span> |
       Jeton: <span id="coinLabel">0</span>
     </div>
@@ -124,6 +140,24 @@
     <p style="font-size:11px; margin-top:6px; color:#9ca3af;">
       Öne çıkarılmış mesajlar: 5 jeton harcar ve sarı vurgulu görünür.
     </p>
+
+    <!-- Jeton / VIP Paketleri (PARA KAZANMA BÖLÜMÜ) -->
+    <div class="packages">
+      <h3>Jeton & VIP Paketleri</h3>
+      <ul>
+        <li>📦 50 Jeton – <b>20 TL</b></li>
+        <li>📦 200 Jeton – <b>50 TL</b></li>
+        <li>⭐ VIP (1 Ay) – <b>30 TL</b></li>
+      </ul>
+      <p>
+        Satın almak için bana ulaş:<br>
+        WhatsApp: <b>+905525278726</b><br>
+        Instagram: <b>@mcavus14</b>
+      </p>
+      <p style="color:#9ca3af;">
+        Ödeme geldikten sonra hesabına jeton/VIP yüklenir.
+      </p>
+    </div>
   </div>
 
 </div>
@@ -220,7 +254,6 @@
       return;
     }
 
-    // 5 jeton harca
     const res = await fetch("/spendCoins", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -244,8 +277,6 @@
     const div = document.createElement("div");
     div.className = "msg " + (data.from === currentUser ? "me" : "other");
 
-    const namePart = document.createElement("span");
-
     if (data.vip) {
       const vipSpan = document.createElement("span");
       vipSpan.className = "vip-tag";
@@ -253,6 +284,7 @@
       div.appendChild(vipSpan);
     }
 
+    const namePart = document.createElement("span");
     namePart.innerText = data.from + ": ";
     div.appendChild(namePart);
 
