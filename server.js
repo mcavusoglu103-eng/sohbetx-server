@@ -1,42 +1,11 @@
-import express from "express";
-
-const app = express();
-app.use(express.json());
-
-app.get("/", (req, res) => {
-  res.send("SohbetX API çalışıyor");
-});
-
 app.post("/chat", async (req, res) => {
   try {
-    const message = req.body.message;
+    const userMessage = req.body?.message || "";
+    // burada cevabı üret (OpenAI veya basit mantık)
+    const reply = userMessage ? `Echo: ${userMessage}` : "Mesaj boş.";
 
-    if (!message) {
-      return res.json({ reply: "Mesaj boş." });
-    }
-
-    const response = await fetch("https://api.openai.com/v1/responses", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "gpt-4.1-mini",
-        input: message
-      })
-    });
-
-    const data = await response.json();
-    const reply = data.output_text || "Cevap alınamadı.";
-
-    res.json({ reply });
+    return res.json({ reply });   // ÖNEMLİ: her zaman JSON
   } catch (e) {
-    res.json({ reply: "Sunucu hatası: " + e.message });
+    return res.status(500).json({ reply: "Cevap alınamadı." });
   }
-});
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log("Server çalışıyor:", PORT);
 });
