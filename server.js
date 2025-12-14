@@ -10,18 +10,13 @@ app.get("/", (req, res) => {
 });
 
 app.post("/chat", (req, res) => {
-  const message = req.body.message;
-
-  if (!message) {
-    return res.json({ reply: "Mesaj gelmedi" });
-  }
-
+  const message = req.body.message || "";
   res.json({
-    reply: "Mesaj alındı: " + message
+    reply: "Mesajını aldım: " + message
   });
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log("Server çalışıyor:", PORT);
+  console.log("Server çalışıyor, port:", PORT);
 });
