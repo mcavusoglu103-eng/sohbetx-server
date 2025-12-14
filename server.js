@@ -1,4 +1,4 @@
-const { v4: uuidv4 } = require("uuid");
+
 app.post("/chat", (req, res) => {
   const message = req.body.message;
 
