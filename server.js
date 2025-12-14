@@ -1,26 +1,23 @@
-const express = require("express");
-const cors = require("cors");
+import express from "express";
+import cors from "cors";
 
 const app = express();
-
-/* 🔴 BUNLAR ÇOK ÖNEMLİ */
 app.use(cors());
-app.use(express.json()); // JSON okumazsan her şey boşa gider
+app.use(express.json());
 
 app.get("/", (req, res) => {
   res.send("SohbetX API çalışıyor");
 });
 
-app.post("/chat", (req, res) => {
-  const message = req.body.message;
+app.post("/chat", async (req, res) => {
+  const { message } = req.body;
 
   if (!message) {
     return res.json({ reply: "Mesaj gelmedi" });
   }
 
-  // Şimdilik basit cevap
   res.json({
-    reply: "Mesajın alındı: " + message
+    reply: "Mesajını aldım: " + message
   });
 });
 
