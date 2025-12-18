@@ -1,33 +1,20 @@
-const VERSION = "v2-18-12-001";
 import express from "express";
 import cors from "cors";
 
 const app = express();
-
-// Middlewares
 app.use(cors());
 app.use(express.json());
 
-// Health / test
+const VERSION = "v3-18-12-AAA"; // bunu her seferinde değiştir
+
 app.get("/", (req, res) => {
-  res.send("SohbetX API çalışıyor");
+  res.send("SohbetX API çalışıyor " + VERSION);
 });
 
-// Chat endpoint
 app.post("/chat", (req, res) => {
-  const message = (req.body && req.body.message) ? String(req.body.message) : "";
-
-  if (!message.trim()) {
-    return res.status(400).json({ reply: "Mesaj boş olamaz." });
-  }
-
-  return res.json({
-    reply: "Mesaj alındı: " + message
-  });
+  const message = req.body?.message ?? "";
+  res.json({ reply: "Mesaj alındı (" + VERSION + "): " + message });
 });
 
-// Render uses PORT
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log("Sunucu", PORT, "numaralı portta çalışıyor");
-});
+app.listen(PORT, () => console.log("running", PORT, VERSION));
