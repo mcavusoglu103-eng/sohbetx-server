@@ -13,7 +13,7 @@ app.get("/", (req, res) => {
 
 app.post("/chat", (req, res) => {
   const message = req.body?.message ?? "";
-  res.json({ reply: "MMerhaba! Nasıl yardımcı olabilirim? (" + VERSION + "): " + message });
+  res.json({ reply: "Merhaba! Nasıl yardımcı olabilirim? (" + VERSION + "): " + message });
 });
 
 const PORT = process.env.PORT || 3000;
