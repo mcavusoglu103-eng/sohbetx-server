@@ -12,9 +12,11 @@ app.get("/", (req, res) => {
 });
 
 app.post("/chat", (req, res) => {
-  const message = req.body?.message ?? "";
-  res.json({ reply: "Merhaba! Nasıl yardımcı olabilirim? (" + VERSION + "): " + message });
-});
+  const message = (req.body?.message ?? "").toString();
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log("running", PORT, VERSION));
+  if (message.toLowerCase().includes("merhaba")) {
+    return res.json({ reply: "Merhaba! Nasıl yardımcı olabilirim?" });
+  }
+
+  return res.json({ reply: "Mesajını aldım: " + message });
+});
