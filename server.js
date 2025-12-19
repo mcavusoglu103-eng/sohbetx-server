@@ -2,7 +2,6 @@ const express = require("express");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 const app = express();
-app.use(cors());
 app.use(express.json({ limit: "1mb" }));
 
 const GEMINI_KEY = process.env.SohbetX || process.env.GEMINI_API_KEY;
