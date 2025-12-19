@@ -65,13 +65,13 @@ app.post("/chat", async (req, res) => {
     const text = result?.response?.text?.() || "Cevap üretilemedi.";
 
     return res.json({ reply: text });
- } catch (err) {
+} catch (err) {
   console.error("Hata:", err);
   res.status(500).json({
-    reply: "Yapay zeka şu an cevap veremiyor.",
-    detail: String(err?.message || err)
+    reply: "HATA: " + String(err?.message || err)
   });
 }
+
 });
 
 const PORT = process.env.PORT || 3000;
