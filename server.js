@@ -1,48 +1,66 @@
-// server.js
 const express = require("express");
+const cors = require("cors");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 const app = express();
-app.use(express.json());
+app.use(cors());
+app.use(express.json({ limit: "1mb" }));
 
-// Render'da KEY'i "SohbetX" yapmışsın. İstersen GEMINI_API_KEY de destekli.
-// Önce GEMINI_API_KEY varsa onu alır, yoksa SohbetX'i alır.
-const API_KEY = process.env.GEMINI_API_KEY || process.env.SohbetX;
+const GEMINI_KEY = process.env.SohbetX || process.env.GEMINI_API_KEY;
 
-if (!API_KEY) {
-  console.error("API KEY bulunamadı. Render Environment'a GEMINI_API_KEY veya SohbetX ekle.");
+if (!GEMINI_KEY) {
+  console.error("ENV HATASI: SohbetX veya GEMINI_API_KEY yok.");
 }
 
-const genAI = new GoogleGenerativeAI(API_KEY);
+const genAI = new GoogleGenerativeAI(GEMINI_KEY || "");
 
-// Root route: tarayıcıda "Cannot GET /" görmemek için
-app.get("/", (req, res) => {
-  res.status(200).send("OK - Server çalışıyor");
-});
+app.get("/", (req, res) => res.send("OK - Server çalışıyor"));
+app.get("/health", (req, res) => res.json({ ok: true, hasKey: Boolean(GEMINI_KEY) }));
 
-// Sağlık kontrolü için
-app.get("/health", (req, res) => {
-  res.status(200).json({ ok: true });
-});
+function buildPrompt(message, history) {
+  // history beklenen format: ["\nSen: ...", "\nBot: ..."] gibi string join’ler olabilir
+  // veya [{role:"user",content:"..."}, ...] gibi objeler olabilir.
+  // Senin bloklarında history string birikiyor, o yüzden stringse direkt kullanıyoruz.
 
-// App Inventor / istemci buraya POST atacak
-// Body: { "message": "..." } veya { "prompt": "..." }
+  let histText = "";
+  if (Array.isArray(history)) {
+    // Eğer listeyse elemanları metne çevir
+    histText = history.map(x => {
+      if (typeof x === "string") return x;
+      if (x && typeof x === "object") {
+        const role = x.role || "unknown";
+        const content = x.content || "";
+        return `\n${role}: ${content}`;
+      }
+      return "";
+    }).join("");
+  } else if (typeof history === "string") {
+    histText = history;
+  }
+
+  // Son mesajı en sona ekle
+  return `${histText}\nSen: ${message}\nBot:`;
+}
+
 app.post("/chat", async (req, res) => {
   try {
-    const prompt = req.body?.message || req.body?.prompt;
+    const message = (req.body?.message || "").toString().trim();
+    const history = req.body?.history; // opsiyonel
 
-    if (!prompt || typeof prompt !== "string") {
-      return res.status(400).json({ reply: "mesaj boş" });
+    if (!message) return res.status(400).json({ reply: "Mesaj boş." });
+    if (!GEMINI_KEY) {
+      return res.status(500).json({ reply: "API anahtarı tanımlı değil (Render Environment)." });
     }
 
+    const prompt = buildPrompt(message, history);
+
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
     const result = await model.generateContent(prompt);
-    const text = result?.response?.text?.() || "";
+    const text = result?.response?.text?.() || "Cevap üretilemedi.";
 
-    return res.json({ reply: text || "Boş yanıt döndü." });
-  } catch (error) {
-    console.error("Hata:", error);
+    return res.json({ reply: text });
+  } catch (err) {
+    console.error("Hata:", err);
     return res.status(500).json({ reply: "Yapay zeka şu an cevap veremiyor." });
   }
 });
