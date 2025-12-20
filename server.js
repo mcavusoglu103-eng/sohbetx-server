@@ -15,7 +15,7 @@ app.use((req, res, next) => {
 });
 
 // Eski env adını da destekleyelim (SohbetX) + yeni standart (OPENAI_API_KEY)
-const OPENAI_KEY = process.env.OPENAI_API_KEY;
+const OPENAI_KEY = (process.env.OPENAI_API_KEY || "").trim();
 
 if (!OPENAI_KEY) {
   console.error("ENV HATASI: SohbetX veya OPENAI_API_KEY yok.");
