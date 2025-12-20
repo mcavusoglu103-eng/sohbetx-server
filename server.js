@@ -65,7 +65,7 @@ app.post("/chat", async (req, res) => {
     const prompt = `${histText}\nSen: ${message}\nBot:`;
 
     // Ücretsiz / hızlı model
-   const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+   const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 ;
 
     const result = await model.generateContent(prompt);
